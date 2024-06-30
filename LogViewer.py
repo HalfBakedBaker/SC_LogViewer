@@ -11,15 +11,14 @@ import webbrowser
 import sys
 import datetime
 import pygame.mixer
-
+import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib.widgets import Button
 
 print("########################################################################################################")
-#####
 print("LogViewer")
-print("Build: 0.2.9.2")
-print("28 June 2024")
-
-
+print("Build: 0.2.9.3")
+print("30 June 2024")
 print("################################################ START ##################################################")
 
 root = tk.Tk()
@@ -92,7 +91,7 @@ class LogViewer(threading.Thread):
         logviewer.geometry("705x950")
         logviewer.title("SC LogViewer")
         # set icon to be icon.ico
-        logviewer.iconbitmap("icon.ico")
+        # logviewer.iconbitmap("icon.ico")
 
 
         # Bind right mouse button to drag the window
@@ -195,6 +194,16 @@ class LogViewer(threading.Thread):
 
         self.btn_toggle_search_menu = tk.Button(self.frame, text=toggle_search_menu_text, command=self.toggle_word_menu, fg="white", bg="#333333", height=height)
         self.btn_toggle_search_menu.pack(side="left", padx=5)
+
+        # button to print the stats of the log to the console and to the log text widget
+        self.btn_print_stats = tk.Button(self.frame, text="Stats", command=self.print_stats, fg="white", bg="#333333", height=height)
+        self.btn_print_stats.pack(side="left", padx=5)
+
+        # button to toggle the charting on and off
+        self.btn_start_stop_chart = tk.Button(self.frame, text="Chart", command=self.start_stop_chart, fg="white", bg="#333333", height=height)
+        self.btn_start_stop_chart.pack(side="left", padx=5)
+
+
 
 
         self.logviewer.attributes("-alpha", 0.7)
@@ -577,9 +586,16 @@ class LogViewer(threading.Thread):
         # bind  ctrl f to call new function named "search_and_count"
         self.logviewer.bind("<Control-f>", lambda event: self.search_and_count_handler())
 
-
+        # bind  ctrl q to call new function named "start stop chart"
+        self.logviewer.bind("<Control-q>", lambda event: self.start_stop_chart())
 
         default_load_word()
+
+
+
+
+
+
 
     # Modified search_and_count_handler method
     def search_and_count_handler(self):
@@ -862,7 +878,7 @@ class LogViewer(threading.Thread):
                     item["count"] += 1
 
     def count_words(self):
-        """Count the occurrences of each word in the log text. Not currently used fully is left over from matplotlib implementation. may re implement later."""
+        """Count the occurrences of each word in the log text."""
         # print("Counting words...")
         content = self.log_text.get(1.0, tk.END)
         words = content.split()  # Remove .lower() conversion
@@ -884,17 +900,108 @@ class LogViewer(threading.Thread):
                 item["count"] = 0
 
     def print_stats(self):
+        print("Printing stats...")
         """Print the statistics of the search words to the console."""
+        print("____________________________________Word Count____________________________________________")
+        # add to log text widget with new line after
+        self.log_text.insert(tk.END, "____________________________________Word Count____________________________________________\n", "yellow")
         for item in self.search_list:
             word = item["word"]
             count = item["count"]
             print(f"{word}: {count}")
+            # add to log text widget with yellow text
+            
+            self.log_text.insert(tk.END, f"{word}: {count}\n", "yellow")
+            self.log_text.see(tk.END)
+        print("__________________________________________________________________________________________")
+        self.log_text.insert(tk.END, f"__________________________________________________________________________________________\n", "yellow")
+
 
     def print_to_console_and_text_widget(self, message):
         """Print a message to the console and the log text widget."""
         print(message)
         self.log_text.insert(tk.END, message + '\n', 'white')
         self.log_text.see(tk.END)
+
+    def start_stop_chart(self):
+        """Start or stop the charting of the search word counts."""
+        if self.start_stop_chart_bool:
+            print("Stopping chart...")
+            self.start_stop_chart_bool = False
+            # set button color to default
+            self.btn_start_stop_chart.config(bg="#333333")
+            self.remove_chart()
+        else:
+            print("Starting chart...")
+            self.start_stop_chart_bool = True
+            # set button color to green
+            self.btn_start_stop_chart.config(bg="green")
+            self.plot_graph()
+            # self.timer.start()
+ 
+    def remove_chart(self):
+        """Remove the chart from the log text widget."""
+        # set button color to default
+        self.btn_start_stop_chart.config(bg="#333333")
+        self.start_stop_chart_bool = False
+        print("Removing chart...")
+        plt.close()
+
+
+
+
+
+    def plot_graph(self):
+        print("Plotting graph...")
+        words = [item["word"] for item in self.search_list]
+        counts = [item["count"] for item in self.search_list]
+        colors = [item["color"] for item in self.search_list]
+
+        plt.style.use('dark_background')
+        fig, ax = plt.subplots()
+        plt.subplots_adjust(bottom=0.2)
+        plt.subplots_adjust(left=0.3)
+        plt.subplots_adjust(right=0.97)
+
+        ax.barh(words, counts, color=colors)
+        self.set_plot_style(ax)
+
+        button_ax = fig.add_axes([0.81, 0.05, 0.1, 0.075]) 
+        # make button to refresh the chart have white text with dark grey background
+        button = Button(button_ax, 'Refresh', color='darkgrey', hovercolor='lightgrey')
+
+
+
+        button.on_clicked(lambda event: self.refresh_chart(fig, ax))
+
+        # on close event for the chart make sure we close the chart and set the start_stop_chart_bool to False
+        fig.canvas.mpl_connect('close_event', lambda event: self.remove_chart())
+
+
+
+
+        plt.show()
+
+    def refresh_chart(self, fig, ax):
+        print("Refreshing plot...")
+        words = [item["word"] for item in self.search_list]
+        counts = [item["count"] for item in self.search_list]
+        colors = [item["color"] for item in self.search_list]
+
+        ax.clear()
+        ax.barh(words, counts, color=colors)
+        self.set_plot_style(ax)
+        plt.draw()
+
+    def set_plot_style(self, ax):
+        ax.set_title("Search Word Counts", color='white')
+        ax.set_xlabel("Counts", color='white')
+        ax.set_ylabel("Words", color='white')
+        ax.tick_params(axis='x', colors='white')
+        ax.tick_params(axis='y', colors='white')
+
+
+
 
     def print_rsi_launcher_json(self):
         """Print the value of the RSI Launcher directory from the config file to the console and log text widget."""
@@ -913,13 +1020,7 @@ class LogViewer(threading.Thread):
             config = json.load(config_file)
             message = "SC LIVE Launcher Directory : " + config["SC_LIVE_directory"]
             self.print_to_console_and_text_widget(message)
-############### TODO
-    # def set_starcitizen_root_directory(self):
-    #     """Set the Star Citizen root directory."""
-    #     # want to set the star citizen root directory and then allow the user to flip between LIVE, PTU, HOTFIX ( we should search the root and update
-    #     #the file menus with the options to select different game versions)
-    #     pass
-###############
+
     def save_live_json(self):
         """Save the selected LIVE directory to the config file."""
         root = tk.Tk()
@@ -1107,9 +1208,10 @@ class LogViewer(threading.Thread):
             print("File not found:", file_path)
 
     def has_match(self, line):
+        
         for item in self.search_list:
             if item["word"].lower() in line.lower():
-
+            
                 if bool(item["notify"]) and not self.mute_notifications:
 
                     self.mp3_notification()
@@ -1277,6 +1379,7 @@ class LogViewer(threading.Thread):
         self.logviewer.destroy()
         sys.exit()
 
+
+
+
 LogView = LogViewer(root)
-
-

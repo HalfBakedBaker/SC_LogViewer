@@ -4,7 +4,7 @@ from LogViewer import *
 def main():
     
     LogView.logviewer.mainloop()
-    
+
 
 if __name__ == '__main__':
     main()
