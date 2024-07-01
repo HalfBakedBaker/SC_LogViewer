@@ -14,6 +14,15 @@ import pygame.mixer
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.widgets import Button
+from play_time_calculator import PlayTimeCalculator
+
+from tkinter import messagebox
+from tkinter import ttk
+from tkinter import filedialog  
+import time
+from pynput import keyboard, mouse
+import tkinter as tk
+import os 
 
 print("########################################################################################################")
 print("LogViewer")
@@ -47,8 +56,6 @@ class LogViewer(threading.Thread):
         """Initializes the LogViewer class."""
         threading.Thread.__init__(self,None,daemon=True)
         print("SC Log Monitor Starting...")
-
-        # look in root directory for folder named "mp3" if it doesnt exist create it and store the location so we can use it later to play sounds
         if not os.path.exists("mp3"):
             os.makedirs("mp3")
             self.mp3_folder = os.path.abspath("mp3")
@@ -56,19 +63,15 @@ class LogViewer(threading.Thread):
             self.mp3_folder = os.path.abspath("mp3")
         pygame.mixer.init()
 
-
         mp3_files = [f for f in os.listdir(self.mp3_folder) if f.endswith(".mp3")]
         if mp3_files:
-            # play first mp3 file found
+
             mp3_file = mp3_files[0]
             mp3_file_path = os.path.join(self.mp3_folder, mp3_file)
             print("Playing:", mp3_file_path)
 
-            # Load the MP3 file
             pygame.mixer.music.load(mp3_file_path)
 
-
-            # Play the MP3 file
             pygame.mixer.music.play()
         else:
             print("No mp3 files found in:", self.mp3_folder)
@@ -86,25 +89,26 @@ class LogViewer(threading.Thread):
         self.frame = tk.Frame(self.logviewer,bg="black")
         self.frame.pack(fill=tk.BOTH, expand=True)
 
-        logviewer.attributes('-topmost', 1) # Force window above all others
+        logviewer.attributes('-topmost', 1) 
         logviewer.overrideredirect(True)
         logviewer.geometry("705x950")
         logviewer.title("SC LogViewer")
-        # set icon to be icon.ico
-        # logviewer.iconbitmap("icon.ico")
 
-
-        # Bind right mouse button to drag the window
+        screen_width = logviewer.winfo_screenwidth()
+        screen_height = logviewer.winfo_screenheight()
+        x = (screen_width / 2) - (705 / 2)
+        y = (screen_height / 2) - (950 / 2)
+        logviewer.geometry("705x950+%d+%d" % (x, y))
+        
         logviewer.bind("<ButtonPress-3>", self.start_move)
         logviewer.bind("<ButtonRelease-3>", self.stop_move)
         logviewer.bind("<B3-Motion>", self.on_move)
 
         self.font_scale_var = tk.DoubleVar(value=1.0)
 
-##
-        self.btn_win_mode = tk.Button(self.frame, text="", command=self.toggle_window, fg="white", bg="#1E1E1E") # < i want to move this inbetween the sliders so [slider][button][slider] >
-        self.btn_win_mode.pack(side="top", fill="x", padx=5, pady=1)
 
+        self.btn_win_mode = tk.Button(self.frame, text="", command=self.toggle_window, fg="white", bg="#1E1E1E") 
+        self.btn_win_mode.pack(side="top", fill="x", padx=5, pady=1)
         DefaultSliderValueOpac = 1
         self.slider_opacity = tk.Scale(
             SliderFrame, from_=0.2, to=1, resolution=0.1, width=10, length=250,
@@ -112,7 +116,7 @@ class LogViewer(threading.Thread):
             bg="#1E1E1E", fg="#FFFFFF", troughcolor="#565656", highlightbackground="#1E1E1E",
             bd=0, font=("Arial", 10, "bold")
         )
-        self.slider_opacity.set(DefaultSliderValueOpac)  # Set slider value to 1 by default
+        self.slider_opacity.set(DefaultSliderValueOpac)  
         self.slider_opacity.pack(side="right", fill="x", padx=5, pady=1)
 
         DefaultSliderValueFont = 1
@@ -123,11 +127,11 @@ class LogViewer(threading.Thread):
             bd=0, font=("Arial", 10, "bold")
         )
 
-        self.slider_font_size.set(DefaultSliderValueFont)  # Set slider value to 1 by default
+        self.slider_font_size.set(DefaultSliderValueFont)  
         self.slider_font_size.pack(side="left", fill="x", padx=5, pady=1)
         self.scrollbar = tk.Scrollbar(self.frame)
         self.scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        self.scrollbar.pack_forget()  # Hide the scrollbar
+        self.scrollbar.pack_forget()  
 
         self.log_text = tk.Text(self.frame, wrap=tk.WORD, yscrollcommand=self.scrollbar.set, fg="white", bg="black")
         self.log_text.pack(fill=tk.BOTH, expand=True)
@@ -149,25 +153,6 @@ class LogViewer(threading.Thread):
         toggle_file_menu_text = "File"
 
         toggle_search_menu_text = "Words"
-
-        # player_name = regex "User Login Success - Handle[HalfBakedBaker" < - Find this, HalfBakedBaker is my username this could be anything this is what we need to set 
-    
-        #
-        # use threading to run the death_counter.py script
-
-        
-
-
-
-
-        # self.death_counter.window.withdraw()
-        
-
-
-
-
-
-
 
         self.btn_monitor = tk.Button(self.frame, text=self.start_monitor_text, command=self.start_stop, fg="white", bg="green", height=height)
         self.btn_monitor.pack(side="left", padx=5)
@@ -195,16 +180,14 @@ class LogViewer(threading.Thread):
         self.btn_toggle_search_menu = tk.Button(self.frame, text=toggle_search_menu_text, command=self.toggle_word_menu, fg="white", bg="#333333", height=height)
         self.btn_toggle_search_menu.pack(side="left", padx=5)
 
-        # button to print the stats of the log to the console and to the log text widget
         self.btn_print_stats = tk.Button(self.frame, text="Stats", command=self.print_stats, fg="white", bg="#333333", height=height)
         self.btn_print_stats.pack(side="left", padx=5)
 
-        # button to toggle the charting on and off
         self.btn_start_stop_chart = tk.Button(self.frame, text="Chart", command=self.start_stop_chart, fg="white", bg="#333333", height=height)
         self.btn_start_stop_chart.pack(side="left", padx=5)
 
-
-
+        self.log_text.bind("<FocusOut>", self.on_focus_out)
+        self.log_text.bind("<FocusIn>", self.on_focus_in)
 
         self.logviewer.attributes("-alpha", 0.7)
         self.logviewer.configure(bg="black")
@@ -221,33 +204,26 @@ class LogViewer(threading.Thread):
         self.is_search_mode = True
 
 
-        ################## Menu Bar  ##########################################################################################
 
-        #  Add a menu bar to the top of the window
+
         self.menu_bar = tk.Menu(logviewer)
 
-        # Create a file menu
         self.file_menu = tk.Menu(self.menu_bar, tearoff=0)
         self.file_menu.add_command(label="Select LIVE", command=self.save_live_json)
 
-
-        # self.file_menu.add_command(label="Select RSI", command=self.save_rsi_json)
         self.file_menu.add_command(label="Open txt", command=self.open_file)
         self.file_menu.add_command(label="Save txt", command=self.save_file)
         self.file_menu.add_separator()
         self.file_menu.add_command(label="Exit", command=self.Quit_LV)
 
-        # create a add word menu
         self.add_word_menu = tk.Menu(self.file_menu, tearoff=0)
         self.add_word_menu.add_command(label="Word Menu", command=self.toggle_word_menu)
-        # self.add_word_menu.add_command(label="Print Stats", command=self.print_stats)
 
-        # create a notifications menu
+
         self.notifications_menu = tk.Menu(self.file_menu, tearoff=0)
         self.notifications_menu.add_command(label="Enable Notifications", command=self.enable_notifications)
         self.notifications_menu.add_command(label="Disable Notifications", command=self.disable_notifications)
 
-        # create Monitor menu
         self.monitor_menu = tk.Menu(self.menu_bar, tearoff=0)
         self.monitor_menu.add_command(label=self.start_monitor_text, command=self.start_monitor)
         self.monitor_menu.add_command(label=self.pause_monitor_text, command=self.pause_monitor)
@@ -256,87 +232,84 @@ class LogViewer(threading.Thread):
         self.monitor_menu.add_command(label="Top", command=self.ToTop)
         self.monitor_menu.add_command(label="Bottom", command=self.ToBottom)
 
-        # add view menu
         self.view_menu = tk.Menu(self.menu_bar, tearoff=0)
         self.view_menu.add_command(label="Toggle Window Mode", command=self.toggle_mode)
         self.view_menu.add_command(label="Toggle Topmost", command=self.toggle_force_front)
         self.view_menu.add_command(label="Toggle Buttons", command=self.toggle_buttons)
 
-        # Add the file menu to the menu bar ( Title Bar )
         self.menu_bar.add_cascade(label="File", menu=self.file_menu)
-        # self.menu_bar.add_cascade(label="Search", menu=self.file_menu)
-        self.menu_bar.add_cascade(label="Words", menu=self.add_word_menu)# clicking this should call "toggle_search_menu" function
+        self.menu_bar.add_cascade(label="Words", menu=self.add_word_menu)
         self.menu_bar.add_cascade(label="Notifications", menu=self.notifications_menu)
         self.menu_bar.add_cascade(label="Monitor", menu=self.monitor_menu)
         self.menu_bar.add_cascade(label="View", menu=self.view_menu)
 
-        # Create a links menu
+
         self.links_menu = tk.Menu(self.menu_bar, tearoff=0)
 
-        # Add a command for each URL
+
         for key, url in zip(KEY, URLS):
             self.links_menu.add_command(label=key, command=lambda url=url: webbrowser.open(url))
 
-        # Add the links menu to the menu bar
+
         self.menu_bar.add_cascade(label="Links", menu=self.links_menu)
 
-        # Configure the logviewer window to use the menu bar
+        self.extras_menu = tk.Menu(self.menu_bar, tearoff=0)
+        self.extras_menu.add_command(label="Idle Monitor", command=self.run_play_time_app)
+
+        self.menu_bar.add_cascade(label="Extras", menu=self.extras_menu)
+
         logviewer.config(menu=self.menu_bar)
 
 
-        ############################################################################################################
-        # Add a search list attribute
+
+
         self.search_list = []
         self.mute_notifications = False
 
-        ## Word Search Menu Init #####################################################################################################
+
         """Opens the search menu for adding, removing, and coloring persistant search words."""
         self.search_win = Toplevel(self.logviewer)
         self.search_win.title("Search Menu")
-        self.search_win.attributes("-topmost", 1)  # Force window above all others
+        self.search_win.attributes("-topmost", 1) 
         self.search_win.configure(bg="black")
         self.search_win.geometry("300x500")
-
-
-        # center `self.search_win` over the parent window
+ 
         parent_x = self.logviewer.winfo_x()
         parent_y = self.logviewer.winfo_y()
         parent_width = self.logviewer.winfo_width()
         parent_height = self.logviewer.winfo_height()
 
-        # Calculate the center position relative to the parent window
+
         x = parent_x + (parent_width / 2) - (300 / 2)
         y = parent_y + (parent_height / 2) - (500 / 2)
 
-        # Update the window geometry to center it over the parent window
+
         self.search_win.geometry(f'300x500+{int(x)}+{int(y)}')
 
-
-        # Make window borderless
         self.search_win.overrideredirect(True)
 
         self.btn_toggle_search_menu.config(bg="#333333")
-        # hide the search menu
+
         self.search_win.withdraw()
 
 
 
-        # Function to move the window when right mouse button is dragged
         def move_window(event):
+            """Move the window when the left mouse button is dragged."""
             self.search_win.geometry(f'+{event.x_root - dx}+{event.y_root - dy}')
 
-        # Function to set the initial x and y coordinates when the right mouse button is clicked
+
         def on_right_click(event):
+            """Store the initial x and y coordinates when the right mouse button is clicked."""
             nonlocal dx, dy
             dx = event.x
             dy = event.y
 
-        # Function to resize the window when the left mouse button is dragged
         def resize_window(event):
             if resizing:
                 self.search_win.geometry(f'{event.x_root}x{event.y_root}')
 
-        # Function to check if the right mouse button is clicked near the edge of the window
+
         def on_right_click_resize(event):
             nonlocal resizing
             edge_thickness = 10
@@ -345,29 +318,31 @@ class LogViewer(threading.Thread):
             else:
                 resizing = False
 
-        # Variables to store the initial x and y coordinates when the right mouse button is clicked
+
         dx, dy = 0, 0
 
-        # Flag to store if the window is being resized
         resizing = False
 
-        # Bind the right mouse button click and drag events
+
         self.search_win.bind('<Button-3>', on_right_click)
         self.search_win.bind('<B3-Motion>', move_window)
         self.search_win.bind('<Button-1>', on_right_click_resize)
         self.search_win.bind('<B1-Motion>', resize_window)
+            
+        self.log_text.bind("<Button-1>", self.on_left_click)
 
 
 
 
-        def add_word():# This is the function that id like to call
+        def add_word():
+            """adds word when inside of the search menu/ word manager"""
             try:
                 search_word = self.log_text.selection_get()
             except tk.TclError:
                 search_word = ""
 
             if not search_word:
-                # make sure we move the search word dialog to the search menu
+
                 screen_width = self.search_win.winfo_screenwidth()
                 screen_height = self.search_win.winfo_screenheight()
                 x = (screen_width / 2) - (300 / 2)
@@ -379,33 +354,34 @@ class LogViewer(threading.Thread):
             if search_word:
                 color = colorchooser.askcolor(parent=self.search_win)[1]
                 if color:
-                    notify_var = tk.IntVar(value=0)  # Default value is 0 (False)
+      
 
-                    def on_ok():
-                        notify = bool(notify_var.get())
-                        self.search_list.append({"word": search_word, "color": color, "count": 0, "notify": notify})
-                        self.search_and_highlight_words()
-                        update_word_list()
-                        # Close the dialog after OK is pressed
-                        notify_dialog.destroy()
 
-                    # Create a new dialog for the checkbox
-                    notify_dialog = tk.Toplevel(self.logviewer)
-                    notify_dialog.title("Enable notifications")
-                    # force the dialog to be on top of the main window
-                    notify_dialog.attributes("-topmost", 1)
-                    chk = tk.Checkbutton(notify_dialog, text="Enable notifications for this word?", variable=notify_var)
-                    chk.pack(pady=10, padx=10)
-                    ok_button = tk.Button(notify_dialog, text="OK", command=on_ok)
-                    ok_button.pack(pady=10)
-
-                    # This keeps the dialog open until the user closes it or presses OK
-                    notify_dialog.mainloop()
+                    notify = messagebox.askyesno("Notify", "Do you want to be notified when the word is found?")
+                    self.search_list.append({"word": search_word, "color": color, "count": 0, "notify": notify})
+                    self.search_and_highlight_words()
+                    update_word_list()
 
 
 
+        def hotkey_add_word():
+            """Adds a word to the search menu/ word manager using a hotkey, default notify = false."""
+            try:
+                search_word = self.log_text.selection_get()
+            except tk.TclError:
+                search_word = None
+                print("No text selected.")
+
+            if search_word:
+                color = colorchooser.askcolor(parent=self.search_win)[1]
+                if color:
+                    notify = messagebox.askyesno("Notify", "Do you want to be notified when the word is found?")
+                    self.search_list.append({"word": search_word, "color": color, "count": 0, "notify": notify})
+                    self.search_and_highlight_words()
+                    update_word_list()
 
         def remove_selected_words():
+            """Remove the selected words from the listbox."""
             selected_items = listbox.curselection()
             for item in reversed(selected_items):
                 word = self.search_list[item]["word"]
@@ -415,12 +391,13 @@ class LogViewer(threading.Thread):
             update_word_list()
 
         def remove_all_words():
-            # Function for displaying the popup and getting user confirmation
+            """Remove all words from the listbox."""
+
             def confirm_remove():
                 root = tk.Tk()
                 root.withdraw()
                 return messagebox.askyesno("Confirm Remove", "Do you want to remove all words?")
-            # Check if the user wants to remove all words
+
             if confirm_remove():
                 clear_all_highlights()
                 self.search_list = []
@@ -428,18 +405,20 @@ class LogViewer(threading.Thread):
             else:
                 print("The operation was cancelled. The words were not removed.")
 
-
         def clear_all_highlights():
+            """Clear all highlights from the log text widget."""
             for item in self.search_list:
                 word = item["word"]
                 self.log_text.tag_remove(word, 1.0, tk.END)
                 self.log_text.tag_configure(word, foreground="white", background="")
 
         def clear_selected_highlights(removed_word):
+            """Clear the highlights of the removed word."""
             self.log_text.tag_remove(removed_word, 1.0, tk.END)
             self.log_text.tag_configure(removed_word, foreground="white", background="")
 
         def update_word_list():
+            """Update the word list in the listbox."""
             listbox.delete(0, tk.END)
             for idx, item in enumerate(self.search_list):
                 word = item["word"]
@@ -449,6 +428,7 @@ class LogViewer(threading.Thread):
 
         def color_word():
             """Color the selected words in the listbox."""
+
             selected_items = listbox.curselection()
             color = colorchooser.askcolor(parent=self.search_win)[1]
             if color:
@@ -457,16 +437,27 @@ class LogViewer(threading.Thread):
             update_word_list()
             self.search_and_highlight_words()
 
+        def change_notification_state_for_selected_words():
+            """Change the notification state of the selected word in the listbox."""
+            selected_items = listbox.curselection()
+            # ask the user once if they want to notify when the selected words are found
+            notify = messagebox.askyesno("Notify", "Do you want to be notified when the selected words are found?")
+            for item in selected_items:
+                self.search_list[item]["notify"] = notify
+
+
         def default_save_word():
-            # Function for displaying the popup and getting user confirmation
+            """Save the current words to the default words file."""
+
             def confirm_overwrite():
+                """Ask the user if they want to overwrite the default words."""
                 root = tk.Tk()
                 root.withdraw()
                 return messagebox.askyesno("Confirm Overwrite", "Do you want to overwrite the default with current words?")
 
             file_path = "defaultwords.json"
             if file_path:
-                # Check if the user wants to overwrite the default words
+
                 if confirm_overwrite():
                     with open(file_path, "w") as file:
                         json.dump(self.search_list, file)
@@ -474,6 +465,7 @@ class LogViewer(threading.Thread):
                     print("The operation was cancelled. The default words were not overwritten.")
 
         def default_load_word():
+            """Load the default words from the default words file."""
             file_path = "defaultwords.json"
             if os.path.exists(file_path):
                 with open(file_path, "r") as file:
@@ -482,17 +474,19 @@ class LogViewer(threading.Thread):
                 update_word_list()
 
         def on_app_close():
-            # default_save_word() ( need to modify so it doesnt prompt the user if they want to overwrite the default words)
-            # sys.exit()
+            """Handle the close event of the search menu."""
+
             self.Quit_LV()
 
         def save_word():
+            """Save the current words to a file."""
             file_path = filedialog.asksaveasfilename(defaultextension=".json", filetypes=[("JSON files", "*.json"), ("All files", "*.*")])
             if file_path:
                 with open(file_path, "w") as file:
                     json.dump(self.search_list, file)
 
         def load_word():
+            """Load the words from a file."""
             file_path = filedialog.askopenfilename(filetypes=[("JSON files", "*.json"), ("All files", "*.*")])
             if file_path:
                 with open(file_path, "r") as file:
@@ -501,6 +495,7 @@ class LogViewer(threading.Thread):
                 update_word_list()
 
         def toggle_highlight():
+            """Toggle the highlight of the words in the listbox."""
             self.highlight = not self.highlight
             if self.highlight:
                 highlight_button.config(text="Highlight", bg="green", fg="white")
@@ -508,7 +503,7 @@ class LogViewer(threading.Thread):
                 highlight_button.config(text="Highlight", bg="black", fg="white")
             self.search_and_highlight_words()
 
-        # Call the 'on_app_close' method when the app is closed
+
         self.logviewer.protocol("WM_DELETE_WINDOW", on_app_close)
 
         xpadval = 1
@@ -548,85 +543,95 @@ class LogViewer(threading.Thread):
         )
         highlight_button.pack(side="left", padx=xpadval)
 
-        # Create a menu bar
+
         menu_bar = tk.Menu(self.search_win)
 
-        # File menu
+
         file_menu = tk.Menu(menu_bar, tearoff=0)
         file_menu.add_command(label="Save Words", command=save_word)
         file_menu.add_command(label="Load Words", command=load_word)
         file_menu.add_command(label="Save Default", command=default_save_word)
         file_menu.add_command(label="Load Default", command=default_load_word)
-        # file_menu.add_command(label="Find CIG Default", command=detect_CIG_Notices)
+
         menu_bar.add_cascade(label="File", menu=file_menu)
 
-        # Words menu
         words_menu = tk.Menu(menu_bar, tearoff=0)
         words_menu.add_command(label="Add Word", command=add_word)
         words_menu.add_command(label="Remove", command=remove_selected_words)
         words_menu.add_command(label="Remove All", command=remove_all_words)
         menu_bar.add_cascade(label="Words", menu=words_menu)
 
-        # Highlight Color menu
+
         highlight_menu = tk.Menu(menu_bar, tearoff=0)
         highlight_menu.add_command(label="Toggle", command=toggle_highlight)
         highlight_menu.add_command(label="New Color", command=color_word)
         menu_bar.add_cascade(label="Highlight Color", menu=highlight_menu)
 
-        # Close
+        # notification menu
+        notification_menu = tk.Menu(menu_bar, tearoff=0)
+        notification_menu.add_command(label="Change Selected", command=change_notification_state_for_selected_words)
+        menu_bar.add_cascade(label="Notify", menu=notification_menu)
+
         menu_bar.add_command(label="Close", command=self.close_search_menu)
 
-        # Attach the menu bar to the window
         self.search_win.config(menu=menu_bar)
-        # default_load_word()
 
+        #keybinds
         # bind ctrl w to open word menu
-        self.logviewer.bind("<Control-w>", lambda event: self.toggle_word_menu())
-        self.search_win.bind("<Control-w>", lambda event: self.toggle_word_menu())
+        self.logviewer.bind("<Control-e>", lambda event: self.toggle_word_menu())
+
         # bind  ctrl f to call new function named "search_and_count"
         self.logviewer.bind("<Control-f>", lambda event: self.search_and_count_handler())
 
         # bind  ctrl q to call new function named "start stop chart"
         self.logviewer.bind("<Control-q>", lambda event: self.start_stop_chart())
 
+        # bind ctrl a to call the keybind word function
+        self.logviewer.bind("<Control-w>", lambda event: hotkey_add_word())
+
         default_load_word()
 
+    def on_focus_out(self, event):
 
+        try:
+            start_index, end_index = self.log_text.tag_ranges(tk.SEL)
+            if start_index and end_index:
 
+                self.log_text.tag_add("persist_highlight", start_index, end_index)
+                self.log_text.tag_configure("persist_highlight", background="gray")
+        except ValueError:
+            pass  
+    
+    def on_focus_in(self, event):
 
+        self.log_text.tag_remove("persist_highlight", 1.0, tk.END)
+    
+    def on_left_click(self, event):
 
-
-
-    # Modified search_and_count_handler method
+        self.log_text.tag_remove("persist_highlight", 1.0, tk.END)
+  
     def search_and_count_handler(self):
         """Handle the search and count operation."""
         if self.is_search_mode:
             self.start_search_and_count()
         else:
             self.finish_search_and_count()
-        # Step 3: Toggle the mode
-        # self.is_search_mode = not self.is_search_mode
 
-    def start_search_and_count(self): # ctrl f
-            # create a text entry at mouse position and if anything is selected in the log text widget it will be placed in the text entry box
-            # then search and count and temporarrally highlight each occurance of the word and print the count to in the text entry box in brackets at the start
+    def start_search_and_count(self): 
 
         self.is_search_mode = False
 
-
-        # get the selected text from the log text widget
         try:
             self.search_word = self.log_text.selection_get()
         except tk.TclError:
             self.search_word = ""
 
         if not self.search_word:
-            # self.search_word = simpledialog.askstring("Search and Count", "Enter a word to search and count:", parent=self.logviewer)
+           
 
             print("no text selected")
         if self.search_word:
 
-            # search and count the word
             index = 1.0
             count = 0
             while index:
@@ -640,54 +645,49 @@ class LogViewer(threading.Thread):
                 else:
                     break
 
-            # create notification window with the count of the word
+
             self.notification = Toplevel(self.logviewer)
             self.notification.title("Search and Count")
-            self.notification.attributes("-topmost", 1)  # Force window above all others
+            self.notification.attributes("-topmost", 1)  
             self.notification.configure(bg="black")
-            # modify size to acomidate word dynamically
 
-            # Define a minimum width for the notification window
             min_width = 100
             width_multiplier = 10
 
-            # Calculate the width based on the length of the search word
+
             calculated_width = len(self.search_word) * width_multiplier
 
-            # Use the maximum of calculated width and minimum width
+
             final_width = max(calculated_width, min_width)
 
-            # Set the width of the notification window
+
             self.notification.geometry(f"{final_width}x25")
 
 
 
             label = tk.Label(self.notification, text=f"{self.search_word} : {count}", fg="yellow", bg="black", font=("Arial", 12))
             label.pack()
-            # make borderless
+
             self.notification.overrideredirect(True)
 
-            # move the notification window to the mouse position
+
             x, y = pyautogui.position()
             self.notification.geometry(f"+{x}+{y}")
 
     def finish_search_and_count(self):
         """Finish the search and count operation by removing the temporary highlights."""
-        # Remove the temporary highlights search word
+
         self.is_search_mode = True
         try:
             self.log_text.tag_remove(self.search_word, 1.0, tk.END)
             self.log_text.tag_configure(self.search_word, foreground="white", background="")
 
 
-            # Destroy the notification window
             self.notification.destroy()
             self.search_and_highlight_words()
 
         except AttributeError:
             pass
-
-##########################################################################################################
 
     def toggle_buttons(self):
         """Toggles the visibility of the UI buttons in the logviewer window"""
@@ -707,7 +707,9 @@ class LogViewer(threading.Thread):
         self.btn_win_mode.pack_forget()
         self.btn_toggle_file_menu.pack_forget()
         self.btn_toggle_search_menu.pack_forget()
-
+        self.btn_print_stats.pack_forget()
+        self.btn_start_stop_chart.pack_forget()
+        
     def show_buttons(self):
         """Shows the UI buttons in the logviewer window"""
         self.btn_monitor.pack(side="left", padx=5)
@@ -719,6 +721,8 @@ class LogViewer(threading.Thread):
         self.btn_win_mode.pack(side="right", padx=5)
         self.btn_toggle_file_menu.pack(side="right", padx=5)
         self.btn_toggle_search_menu.pack(side="left", padx=5)
+        self.btn_print_stats.pack(side="left", padx=5)
+        self.btn_start_stop_chart.pack(side="left", padx=5)
 
     def show_file_menu(self):
         """Shows a dropdown menu with options"""
@@ -764,28 +768,25 @@ class LogViewer(threading.Thread):
         """Opens the search menu"""
         print("Open search menu called")
 
-        # Since self.search_win is already initialized, just make it visible
+
 
         self.search_win.deiconify()
 
-        # find center of the parent window
+
         parent_x = self.logviewer.winfo_x()
         parent_y = self.logviewer.winfo_y()
         parent_width = self.logviewer.winfo_width()
         parent_height = self.logviewer.winfo_height()
 
-        # Calculate the center position relative to the parent window
+
         x = parent_x + (parent_width / 2) - (300 / 2)
         y = parent_y + (parent_height / 2) - (500 / 2)
 
-        # Update the window geometry to center it over the parent window
+
         self.search_win.geometry(f'300x500+{int(x)}+{int(y)}')
 
-        # force front
         self.search_win.attributes("-topmost", 1)
 
-
-        # Change button color to indicate the search menu is open
         self.btn_toggle_search_menu.config(bg="green")
 
     def close_search_menu(self):
@@ -794,7 +795,7 @@ class LogViewer(threading.Thread):
         if self.search_win:
             self.search_win.withdraw()
 
-            # Change button color to green
+
             self.btn_toggle_search_menu.config(bg="#333333")
 
     def enable_notifications(self):
@@ -821,7 +822,6 @@ class LogViewer(threading.Thread):
 
     def highlight_new_line(self, line, start_index):
         """Highlight the new line that was added to the log text."""
-        # Same implementation as the updated search_and_highlight_words method
 
         for item in self.search_list:
             word = item["word"]
@@ -836,7 +836,7 @@ class LogViewer(threading.Thread):
                     if self.highlight:
                         self.log_text.tag_configure(word, background=color, foreground="black")
                     else:
-                        self.log_text.tag_configure(word, foreground=color, background="")  # Set the background to an empty string
+                        self.log_text.tag_configure(word, foreground=color, background="")  
                     index = end_index
                     item["count"] += 1
                 else:
@@ -866,24 +866,24 @@ class LogViewer(threading.Thread):
             index = 1.0
             item["count"] = 0
             while index:
-                index = self.log_text.search(word, index, stopindex=tk.END, nocase=False)  # Set nocase to False
+                index = self.log_text.search(word, index, stopindex=tk.END, nocase=False)  
                 if index:
                     end_index = f"{index}+{len(word)}c"
                     self.log_text.tag_add(word, index, end_index)
                     if self.highlight:
                         self.log_text.tag_configure(word, background=color, foreground="black")
                     else:
-                        self.log_text.tag_configure(word, foreground=color, background="")  # Set the background to an empty string
+                        self.log_text.tag_configure(word, foreground=color, background="") 
                     index = end_index
                     item["count"] += 1
 
     def count_words(self):
         """Count the occurrences of each word in the log text."""
-        # print("Counting words...")
-        content = self.log_text.get(1.0, tk.END)
-        words = content.split()  # Remove .lower() conversion
 
-        # Count occurrences of each word
+        content = self.log_text.get(1.0, tk.END)
+        words = content.split()  
+
+
         word_counts = {}
         for word in words:
             if word not in word_counts:
@@ -891,7 +891,7 @@ class LogViewer(threading.Thread):
             else:
                 word_counts[word] += 1
 
-        # Update counts in the search list
+
         for item in self.search_list:
             word = item["word"]
             if word in word_counts:
@@ -903,19 +903,18 @@ class LogViewer(threading.Thread):
         print("Printing stats...")
         """Print the statistics of the search words to the console."""
         print("____________________________________Word Count____________________________________________")
-        # add to log text widget with new line after
+        
         self.log_text.insert(tk.END, "____________________________________Word Count____________________________________________\n", "yellow")
         for item in self.search_list:
             word = item["word"]
             count = item["count"]
             print(f"{word}: {count}")
-            # add to log text widget with yellow text
+
             
             self.log_text.insert(tk.END, f"{word}: {count}\n", "yellow")
             self.log_text.see(tk.END)
         print("__________________________________________________________________________________________")
         self.log_text.insert(tk.END, f"__________________________________________________________________________________________\n", "yellow")
-
 
     def print_to_console_and_text_widget(self, message):
         """Print a message to the console and the log text widget."""
@@ -928,28 +927,23 @@ class LogViewer(threading.Thread):
         if self.start_stop_chart_bool:
             print("Stopping chart...")
             self.start_stop_chart_bool = False
-            # set button color to default
+
             self.btn_start_stop_chart.config(bg="#333333")
             self.remove_chart()
         else:
             print("Starting chart...")
             self.start_stop_chart_bool = True
-            # set button color to green
+
             self.btn_start_stop_chart.config(bg="green")
             self.plot_graph()
-            # self.timer.start()
  
     def remove_chart(self):
         """Remove the chart from the log text widget."""
-        # set button color to default
+
         self.btn_start_stop_chart.config(bg="#333333")
         self.start_stop_chart_bool = False
         print("Removing chart...")
         plt.close()
-
-
-
-
 
     def plot_graph(self):
         print("Plotting graph...")
@@ -967,14 +961,14 @@ class LogViewer(threading.Thread):
         self.set_plot_style(ax)
 
         button_ax = fig.add_axes([0.81, 0.05, 0.1, 0.075]) 
-        # make button to refresh the chart have white text with dark grey background
+
         button = Button(button_ax, 'Refresh', color='darkgrey', hovercolor='lightgrey')
 
 
 
         button.on_clicked(lambda event: self.refresh_chart(fig, ax))
 
-        # on close event for the chart make sure we close the chart and set the start_stop_chart_bool to False
+
         fig.canvas.mpl_connect('close_event', lambda event: self.remove_chart())
 
 
@@ -1000,9 +994,6 @@ class LogViewer(threading.Thread):
         ax.tick_params(axis='x', colors='white')
         ax.tick_params(axis='y', colors='white')
 
-
-
-
     def print_rsi_launcher_json(self):
         """Print the value of the RSI Launcher directory from the config file to the console and log text widget."""
         script_directory = os.path.abspath('.')
@@ -1026,24 +1017,24 @@ class LogViewer(threading.Thread):
         root = tk.Tk()
         root.withdraw()
         selected_directory = filedialog.askdirectory()
-        if not selected_directory:  # user clicked cancel
+        if not selected_directory:  
             return
 
         config = {}
-        # script_directory = os.path.dirname(os.path.abspath(__file__))   ## possible cause of it not working in .exe
+
         script_directory = os.path.abspath('.')
 
         config_file_path = os.path.join(script_directory, "config.json")
 
-        # Check if config file already exists, if so, load it into `config` dict
+
         if os.path.exists(config_file_path):
             with open(config_file_path, "r") as config_file:
                 config = json.load(config_file)
 
-        # Update `config` dict with new LIVE directory
+
         config["SC_LIVE_directory"] = selected_directory
 
-        # Write `config` dict to file
+
         with open(config_file_path, "w") as config_file:
             json.dump(config, config_file)
 
@@ -1054,22 +1045,22 @@ class LogViewer(threading.Thread):
         root = tk.Tk()
         root.withdraw()
         selected_directory = filedialog.askdirectory()
-        if not selected_directory:  # user clicked cancel
+        if not selected_directory:  
             return
 
         config = {}
         script_directory = os.path.abspath('.')
         config_file_path = os.path.join(script_directory, "config.json")
 
-        # Check if config file already exists, if so, load it into `config` dict
+
         if os.path.exists(config_file_path):
             with open(config_file_path, "r") as config_file:
                 config = json.load(config_file)
 
-        # Update `config` dict with new RSI directory
+
         config["SC_RSI_directory"] = selected_directory
 
-        # Write `config` dict to file
+
         with open(config_file_path, "w") as config_file:
             json.dump(config, config_file)
 
@@ -1084,15 +1075,13 @@ class LogViewer(threading.Thread):
         self.log_text.configure(font=large_font)
         self.log_text.tag_configure('larger_font', font=large_font)
         self.log_text.tag_configure('Instace_Stats', font=large_font, foreground='#df0eff')
-        # self.log_text.tag_configure('green', font=large_font, foreground='#6a9955')
-        # self.log_text.tag_configure('red', font=large_font, foreground='#c6422a')
+
         self.log_text.tag_configure('smaller_font', font=small_font, foreground='#17940c')
-        # Add other text tag configurations here
 
     def pause_monitor(self):
         """Pause the monitoring of the log file."""
 
-        # self.pause_monitor = True
+
         pause_bool = self.pause_monitor
 
         if pause_bool is False:
@@ -1103,7 +1092,6 @@ class LogViewer(threading.Thread):
             print("Monitoring Resumed...")
             self.pause_monitor = False
             self.btn_pause_monitor.config(text=self.pause_monitor_text, bg="green")
-        # self.pause_monitor = not self.pause_monitor
 
     def start_monitor(self):
         """Start monitoring the log file."""
@@ -1130,7 +1118,7 @@ class LogViewer(threading.Thread):
 
     def stop_monitor(self):
         """Stop monitoring the log file. there is an issue with the counting being broken when stopping and starting the monitor which is why the count is not working correctly."""
-        self.monitor_log_process = False # issues with counting being broken when stopping and starting
+        self.monitor_log_process = False 
         self.btn_monitor.config(text=self.start_monitor_text, bg="green")
         self.btn_pause_monitor.config(text=self.pause_monitor_text, bg="green")
         self.pause_monitor = False
@@ -1150,7 +1138,7 @@ class LogViewer(threading.Thread):
         """Process a line of text and insert it into the text widget."""
         current_tag = 'white'
 
-        # Check for the PHYSICS INSTANCE STATS BEGIN and END
+
         if "PHYSICS INSTANCE STATS BEGIN" in line:
             self.inside_physics_instance = True
 
@@ -1158,12 +1146,12 @@ class LogViewer(threading.Thread):
             self.inside_physics_instance = False
             current_tag = 'Instace_Stats'
 
-        # If we are inside a PHYSICS INSTANCE STATS section, change the color to purple
+
         if self.inside_physics_instance:
 
             current_tag = 'Instace_Stats'
 
-        parts = re.findall(r'(\<\d{4}\-\d{2}\-\d{2}T\d{2}\:\d{2}\:\d{2}\.\d{3}Z\>)(.*$)', line)  ## Finds Time Stamp and sets color to be green
+        parts = re.findall(r'(\<\d{4}\-\d{2}\-\d{2}T\d{2}\:\d{2}\:\d{2}\.\d{3}Z\>)(.*$)', line) 
 
 
         for part in parts:
@@ -1177,7 +1165,7 @@ class LogViewer(threading.Thread):
         self.log_text.see(tk.END)
 
     def monitor_log(self, file_path):
-        self.inside_physics_instance = False # sets color back to white if user stopped monitoring inside a physics instance
+        self.inside_physics_instance = False 
 
         """Monitor the log file for changes and update the text widget."""
         if not file_path:
@@ -1187,7 +1175,7 @@ class LogViewer(threading.Thread):
             with open(file_path, "r") as f:
                 should_highlight = False
                 while self.monitor_log_process:
-                    if not self.pause_monitor:  # Check if monitoring is paused
+                    if not self.pause_monitor:  
                         where = f.tell()
                         line = f.readline()
                         if not line:
@@ -1197,13 +1185,13 @@ class LogViewer(threading.Thread):
                             start_index = self.log_text.index(tk.END + "-1c linestart")
                             self.process_line(line)
                             if self.has_match(line):
-                                # print(line) # prints the entire line to the console if it has a match in the search list
+                                
                                 should_highlight = True
                             if line.endswith('\n') and should_highlight:
                                 self.highlight_new_line(line, start_index)
                                 should_highlight = False
                     else:
-                        time.sleep(0.1)  # Sleep while monitoring is paused
+                        time.sleep(0.1)  
         except FileNotFoundError:
             print("File not found:", file_path)
 
@@ -1233,11 +1221,11 @@ class LogViewer(threading.Thread):
         print(f"######################### {current_time} ##################################")
         headers = ["Count", "Type"]
 
-        # Get data from the search list count
+       
         data = [(item["count"], item["word"]) for item in self.search_list]
 
 
-          # Check if the data list is not empty
+         
         if not data:
             print("No data to print.")
             return
@@ -1245,33 +1233,27 @@ class LogViewer(threading.Thread):
 
         data.sort(key=lambda x: int(x[0]), reverse=True)
 
-        # Determine the maximum width of each column
+        
         col_widths = [max(len(str(row[i])) for row in data) for i in range(len(headers))]
         row_text = f"######################### {current_time} ##################################"
         self.log_text.insert(tk.END, row_text + "\n")
 
-        # Print the headers and log to self.log_text
+        
         header_text = ""
         for i in range(len(headers)):
             header_text += headers[i].ljust(col_widths[i]) + "\t"
         print(header_text)
-        # self.log_text.insert(tk.END, header_text + "\n")
-
-        # Print the separator and log to self.log_text
+        
         separator_text = "-" * sum(col_widths)
         print(separator_text)
-        # self.log_text.insert(tk.END, separator_text + "\n")
-
-        # Print the rows and log to self.log_text
+        
         for row in data:
             row_text = ""
             for i in range(len(row)):
                 row_text += str(row[i]).ljust(col_widths[i]) + "\t"
             print(row_text)
-            # self.log_text.insert(tk.END, row_text + "\n")
+            
         print("################################ END ###########################################" + "\n")
-        # self.log_text.insert(tk.END, "################################ END ########################################" + "\n")
-        # self.log_text.see(tk.END)
 
     def start_move(self, event):
         """Start moving the log viewer window."""
@@ -1298,14 +1280,14 @@ class LogViewer(threading.Thread):
         else:
             print("Minimize Log View Window")
             self.logviewer.geometry(f"{self.logviewer.winfo_width()}x150")
-            #wait for the window to minimize before scrolling to the bottom
+            
             self.logviewer.after(100, self.ToBottom)
 
             self.is_minimized = True
-    def set_transparency(self, value): # Set transparanecy value
+    def set_transparency(self, value):
         """Set the transparency of the log viewer window."""
         self.logviewer.attributes('-alpha', float(value))
-    def toggle_mode(self):   #Toggle window  Borderless
+    def toggle_mode(self):  
         """Toggle the log viewer window between borderless and bordered states."""
         self.is_borderless = not self.is_borderless
         if self.is_borderless:
@@ -1320,39 +1302,42 @@ class LogViewer(threading.Thread):
         current_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         filename = f"log_{current_time}.txt"
         file_path = tk.filedialog.asksaveasfilename(initialfile=filename, defaultextension=".txt")
-        if file_path: # open with specified encoding
+        if file_path: 
             with open(file_path, "w", encoding="utf-8") as file:
                 file.write(self.log_text.get("1.0", tk.END))
                 
     def ClearLog(self):
         """Clear the log text widget."""
-        # self.stop_monitor()
+        
         print("Stopping Monitor")
 
         self.btn_monitor.config(text=self.start_monitor_text, bg="green")
 
 
         self.log_text.delete("1.0", tk.END)
+        
+        for item in self.search_list:
+            item["count"] = 0
 
         print("LogCleared")
 
     def Set_FontSize(self, value):
         """Set the font size of the log text widget."""
-        small_font_size = int(float(value) * 10) # scale font value
-        large_font_size = int(float(value) * 10) # scale font value
+        small_font_size = int(float(value) * 10)
+        large_font_size = int(float(value) * 10) 
         small_font = ("Helvetica", small_font_size)
         large_font = ("Helvetica", large_font_size)
 
         self.log_text.tag_configure('white', font=large_font)
-        self.log_text.tag_configure('larger_font', font=large_font) # White
-        self.log_text.tag_configure('Blue_font', font=large_font) # Blue
+        self.log_text.tag_configure('larger_font', font=large_font)
+        self.log_text.tag_configure('Blue_font', font=large_font) 
         self.log_text.tag_configure('Yellow_font', font=large_font)
         self.log_text.tag_configure('Purple_font', font=large_font)
         self.log_text.tag_configure('Red_font', font=large_font)
         self.log_text.tag_configure('Orange_font', font=large_font)
-        self.log_text.tag_configure('LightGreen_font', font=large_font) # Green Light
+        self.log_text.tag_configure('LightGreen_font', font=large_font)
 
-        self.log_text.tag_configure('smaller_font', font=small_font, foreground='#17940c') # Green timestamp
+        self.log_text.tag_configure('smaller_font', font=small_font, foreground='#17940c')
         self.log_text.tag_configure('Instace_Stats', font=large_font, foreground='#df0eff')
 
     def ToTop(self):
@@ -1374,12 +1359,28 @@ class LogViewer(threading.Thread):
 
     def Quit_LV(self):
         """Quit the log viewer."""
-        # print("Quit Log Viewer")
+      
         self.stop_monitor()
         self.logviewer.destroy()
         sys.exit()
 
+    def run_play_time_app(self):
+        """Run the PlayTimeCalculator application."""
+        
 
+
+        play_time_app = PlayTimeCalculator()
+        
+        keyboard_listener = keyboard.Listener(on_press=play_time_app.on_press)
+        mouse_listener = mouse.Listener(on_click=play_time_app.on_click, on_move=play_time_app.on_move_listener)
+        keyboard_listener.start()
+        mouse_listener.start()
+        play_time_app.mainloop()
+        
+        keyboard_listener.stop()
+        mouse_listener.stop()
 
 
 LogView = LogViewer(root)
+
+
