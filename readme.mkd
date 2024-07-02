@@ -1,38 +1,36 @@
-Run SC LogViewer 
+# SC LogViewer 
 
 Simple Log Monitoring Overlay for Star Citizen 
 
-Click Start (bottom left)
-	Select Star Citizen install folder. I.e "LIVE" or "PTU" ( this will be saved as default next time. Can be changed in file menu. 
+![Screenshot 2024-07-02 004233](https://github.com/HalfBakedBaker/SC_LogViewer/assets/71772783/af7bc5a0-e975-4e4e-9615-64605c139032)
+
+Click Start (bottom left)  
+Select Star Citizen install folder. I.e "LIVE" or "PTU" (this will be saved as default next time. Can be changed in file menu.)  
+
+## Hotkeys:
+
+(Mouse has to be focused on the log viewer for them to work currently)  
+- `ctrl q` = chart window : shows the chart of the word occurrences
+- ![Screenshot 2024-07-02 005928](https://github.com/HalfBakedBaker/SC_LogViewer/assets/71772783/08f88957-258f-4424-94a7-46a1ce969425)
+- `ctrl w` = add word fast : adds selected word to list of search words  
+- `ctrl e` = word manager : shows the word manager window
+- ![Screenshot 2024-07-02 005920](https://github.com/HalfBakedBaker/SC_LogViewer/assets/71772783/439db342-c7ad-4479-9a06-188b14e6e2a8)
+- `ctrl f` = search word : searches for the selected word, highlights all occurrences in yellow and shows a count
+- ![Screenshot 2024-07-02 004141](https://github.com/HalfBakedBaker/SC_LogViewer/assets/71772783/5f2cfcd8-0f62-4fda-a845-005ea685e015)
+
+## PlayTime Calculator (inside "Extras")
+
+![Screenshot 2024-06-30 141344](https://github.com/HalfBakedBaker/SC_LogViewer/assets/71772783/0ed9e2e0-d828-42ba-9555-b501fecfa6c3)
+
+Is just a tool that listens for any input.  
+I use it to see how much time is wasted during testing.  
+If there is no input for more than 1 second it starts counting time spent idle.  
+It stops when any input is received. (be careful as the button to open it in the log viewer will open multiple instances.)  
 
 
-
-
-	
-
-Hotkeys:
-(Mouse has to be focused on the log viewer for them to work currently)
-ctrl q = chart window : shows the chart of the word occurrences
-ctrl w = add word fast : adds selected word to list of search words 
-ctrl e = word manager : shows the word manager window
-ctrl f = search word : searches for the selected word, highlights all occurrences in yellow and shows a count 
-
-
-
-
-
-
-
-
-PlayTime Calculator (inside "Extras") is just a tool that listens for any input. 
-I use it to see how much time is wasted during testing.
-If there is no input for more than 1 second it starts counting time spent idle. 
-It stops when any input is received. (be careful as the button to open it in the log viewer will open multiple instances) 
-
-
-
-
-
-
-
-
+![Screenshot 2024-07-02 004129](https://github.com/HalfBakedBaker/SC_LogViewer/assets/71772783/5e9d009c-9900-4443-ac22-4af2d96d27c0)
+![Screenshot 2024-07-02 004116](https://github.com/HalfBakedBaker/SC_LogViewer/assets/71772783/0c9d6555-a156-4a15-a9bc-bbbf8beae652)
+![Screenshot 2024-07-02 004106](https://github.com/HalfBakedBaker/SC_LogViewer/assets/71772783/5bf1ec91-19ca-4a5c-bb07-49a2f6d8762f)
+![Screenshot 2024-07-02 004051](https://github.com/HalfBakedBaker/SC_LogViewer/assets/71772783/b4e7931c-d2ae-456b-b3a8-0d9daee60f39)
+![Screenshot 2024-07-02 004257](https://github.com/HalfBakedBaker/SC_LogViewer/assets/71772783/f20b3ff9-775e-4797-aa9f-9559a7bc80e7)
+"""
